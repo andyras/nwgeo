@@ -40,11 +40,16 @@ else:
 if (os.path.exists(outputFile)):
     os.rename(outputFile,outputFile+".bak")
 
+# assume optimization did not converge
+isConverged = False
+
 # go through NWChem output and get coordinates
 ii = 0
 geo = []
 while (ii < len(nwo)):
     line = nwo[ii]
+    if (line.strip() == "Optimization converged"):
+        isConverged = True
     if line.strip().startswith("Output coordinates in "):
         ii += 4
         line = nwo[ii]
@@ -64,3 +69,6 @@ while (ii < len(nwo)):
 
 if (not args.all):
     outputXYZ(outputFile, lastGeo)
+
+if (not isConverged):
+    print("WARNING: geometry optimization did not converge!")
