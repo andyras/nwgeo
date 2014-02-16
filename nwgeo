@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+
+import argparse
+
+parser = argparse.ArgumentParser(description='Script to process NWChem outputs to get coordinates and such')
+parser.add_argument('-a', '--all', help='print all coordinates from optimization to output', action='store_true', default=False)
+parser.add_argument('-o', '--output', help='set output file name', type=str, default='')
+parser.add_argument('input', help='NWChem output file', type=str)
+
+args = parser.parse_args()
+
+import sys
+import os
+
+if (args.all):
+    print("printing all")
+
+def outputXYZ(outputFile, geo):
+    with open(outputFile, "a") as o:
+        o.write(str(len(geo))+"\n\n")
+        for line in geo:
+            o.write(line)
+        o.write("\n")
+
+# read NWChem output
+try:
+    with open(args.input) as i:
+        nwo = i.readlines()
+except IOError:
+    print('Trouble in paradise: error reading NWChem output',args.input)
+
+# set output file
+if (args.output != ""):
+    outputFile = args.output
+else:
+    fName, fExt = os.path.splitext(args.input)
+    outputFile = fName+"_nwg"+fExt
+
+# if file exists, move to backup
+if (os.path.exists(outputFile)):
+    os.rename(outputFile,outputFile+".bak")
+
+# go through NWChem output and get coordinates
+ii = 0
+geo = []
+while (ii < len(nwo)):
+    line = nwo[ii]
+    if line.strip().startswith("Output coordinates in "):
+        ii += 4
+        line = nwo[ii]
+        while (line.strip() != ''):
+            l = line.split()
+            geo.append('\t'.join([l[1],l[3],l[4],l[5],'\n']))
+            ii += 1
+            line = nwo[ii]
+        # print intermediate geometries
+        if (args.all):
+            outputXYZ(outputFile, geo)
+        # save most recent geometry
+        else:
+            lastGeo = geo
+        geo = []
+    ii += 1
+
+if (not args.all):
+    outputXYZ(outputFile, lastGeo)
