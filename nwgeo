@@ -5,6 +5,7 @@ import argparse
 parser = argparse.ArgumentParser(description='Script to process NWChem outputs to get coordinates and such')
 parser.add_argument('-a', '--all', help='print all coordinates from optimization to output', action='store_true', default=False)
 parser.add_argument('-o', '--output', help='set output file name', type=str, default='')
+parser.add_argument('-q', '--quiet', help='do not print friendly information', action='store_true')
 parser.add_argument('input', help='NWChem output file', type=str)
 
 args = parser.parse_args()
@@ -27,7 +28,7 @@ try:
     with open(args.input) as i:
         nwo = i.readlines()
 except IOError:
-    print('Trouble in paradise: error reading NWChem output',args.input)
+    print('Trouble in paradise: error reading NWChem output', args.input)
 
 # set output file
 if (args.output != ""):
@@ -39,6 +40,8 @@ else:
 # if file exists, move to backup
 if (os.path.exists(outputFile)):
     os.rename(outputFile,outputFile+".bak")
+    if (not args.quiet):
+        print("Old output moved to", outputFile+".bak")
 
 # assume optimization did not converge
 isConverged = False
@@ -70,5 +73,8 @@ while (ii < len(nwo)):
 if (not args.all):
     outputXYZ(outputFile, lastGeo)
 
-if (not isConverged):
+if (not args.quiet):
+    print("Writing output to",outputFile)
+
+if (not isConverged and not args.quiet):
     print("WARNING: geometry optimization did not converge!")
